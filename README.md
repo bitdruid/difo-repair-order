@@ -7,8 +7,11 @@ Difo liest Bilder manchmal nicht ein, da die Bildreihenfolge nicht stimmt. Diese
 <br><br>
 Ausführbar ohne weitere Installation. Einfache Handhabung für die "Belegschaft". AWB Zeitersparnis.
 
+# About
+Geschrieben für Python 3.12 mit tkinter-ui. Für das Compiling muss Python 3.12 installiert werden.
+
 # Installation
-Download the release and run the self-executable. Alternatively compile it yourself.
+Download the release and run the self-executable. You do not need to install any other tools/packages. Alternatively compile it yourself.
 ### Linux
 ```
 sudo bash build.sh

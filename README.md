@@ -4,6 +4,8 @@
 # Beschreibung
 
 Difo liest Bilder manchmal nicht ein, da die Bildreihenfolge nicht stimmt. Dieses Tool benennt die Bilder in eine fortfolgende Reihenfolge um. Das Einlesen ist dann kein Problem mehr. Benutzbar an "Medien-PCs". (Jeder der versteht um was es geht braucht es vermutlich).
+<br><br>
+Ausführbar ohne weitere Installation. Einfache Handhabung für die "Belegschaft". AWB Zeitersparnis.
 
 # Installation
 Download the release and run the self-executable. Alternatively compile it yourself.

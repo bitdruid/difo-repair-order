@@ -73,8 +73,15 @@ def proceed_messagebox():
 def choose_directory():
     directory = filedialog.askdirectory()
     if directory:
+        print_log("", clean=True)
+        print_log("Selected directory:\n" + directory + "\n")
         folder_selection.delete(0, tk.END)
         folder_selection.insert(0, directory)
+        directory_files = os.listdir(directory)
+        print_log("Files in selected directory:\n")
+        for file in directory_files:
+            print_log(f"- {file}")
+        print_log("")
 
 def read_files():
     global FILES
@@ -116,7 +123,7 @@ def repair_order():
 
 def rename_files():
     global FILES
-    print_log("Renaming files")
+    print_log("Renaming files:")
     for file in FILES:
         if file["name_new"]:
             os.rename(file["name_old"], file["name_new"])
@@ -127,13 +134,16 @@ def backup_folder():
     global BACKUP_CREATED
     BACKUP_CREATED = True
     try:
-        if os.path.isdir(FOLDER + "_backup"):
+        user_desktop = Path.home() / "Desktop"
+        backup_folder = os.path.basename(FOLDER) + "_backup"
+        backup_path = user_desktop / backup_folder
+        if os.path.isdir(backup_path):
             print_log("There is already a backup - Please check\n")
             raise Exception
-        os.mkdir(FOLDER + "_backup")
+        os.mkdir(user_desktop / backup_folder)
         for file in FILES:
-            copyfile(FOLDER + "/" + file['name_old'], FOLDER + "_backup/" + file['name_old'])
-        print_log("Backup created at " + FOLDER + "_backup\n")
+            copyfile(FOLDER + "/" + file['name_old'], backup_path / file['name_old'])
+        print_log("Backup created at " + str(backup_path) + "\n")
     except Exception:
         BACKUP_CREATED = False
         print_log("Could not create backup - aborting\n")
@@ -148,12 +158,12 @@ def delete_non_images():
 
 def start_processing():
     global FOLDER, CHECKBOX_DELETE, CHECKBOX_NO_BACKUP, BACKUP_CREATED, DISORDER_FOUND, FILES
-    print_log("", clean=True)
     FOLDER = folder_selection.get()
     if proceed_messagebox() == "yes":
+        print_log("", clean=True)
         if FOLDER:
             if os.path.isdir(FOLDER):
-                print_log("Searching in\n" + FOLDER + "\n")
+                print_log("Searching in:\n" + FOLDER + "\n")
                 os.chdir(FOLDER)
                 read_files()
                 if FILES:

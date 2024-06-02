@@ -87,6 +87,7 @@ def read_files():
     global FILES
     FILES = []
     for file in os.listdir(FOLDER):
+        if os.path.isdir(file): continue
         file_path = os.path.join(FOLDER, file)
         file_info = {
             "name_old": file,

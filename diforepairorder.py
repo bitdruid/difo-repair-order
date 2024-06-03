@@ -56,7 +56,7 @@ def save_log():
     log_output.config(state="normal")
     log_content = log_output.get(1.0, tk.END)
     log_output.config(state="disabled")
-    file = filedialog.asksaveasfile(mode="w", title="Save log", initialfile="diforepairorder_" + date, defaultextension=".log", filetypes=[("Text files", "*.txt")])
+    file = filedialog.asksaveasfile(mode="w", title="Log speichern", initialfile="diforepairorder_" + date, defaultextension=".log", filetypes=[("Text files", "*.txt")])
     if file:
         file.write(log_content)
 
@@ -66,22 +66,26 @@ def proceed_messagebox():
         message += "- Alles außer Bilder wird gelöscht\n"
     if CHECKBOX_NO_BACKUP:
         message += "- Es wird keine Sicherung erstellt\n"
-    message += "\nACHTUNG!\nDateien in diesem Ordner werden umbenannt und/oder gelöscht! Der Zielpfad sollte am besten der Ordner auf der SD-Karte der Kamera sein!\n"
+    message += "\nACHTUNG!\nDateien in diesem Ordner werden umbenannt und/oder gelöscht! Ist das Verzeichnis korrekt?"
     message += "\nFortfahren?"
     return tk.messagebox.askquestion("Einstellungen prüfen", message, icon="warning")
 
 def choose_directory():
     directory = filedialog.askdirectory()
     if directory:
-        print_log("", clean=True)
-        print_log("Selected directory:\n" + directory + "\n")
-        folder_selection.delete(0, tk.END)
-        folder_selection.insert(0, directory)
-        directory_files = os.listdir(directory)
-        print_log("Files in selected directory:\n")
-        for file in directory_files:
-            print_log(f"- {file}")
-        print_log("")
+        # set folder_selection to None if system drive
+        if "c:" in directory.lower():
+            print_log("Das ausgewählte Verzeichnis befindet sich auf dem Systemlaufwerk. Bitte den Ordner auf der SD-Karte der Kamera auswählen.\n")
+        else:
+            print_log("", clean=True)
+            print_log("Ausgewähltes Verzeichnis:\n" + directory + "\n")
+            folder_selection.delete(0, tk.END)
+            folder_selection.insert(0, directory)
+            directory_files = os.listdir(directory)
+            print_log("Dateien im ausgewählten Verzeichnis:\n")
+            for file in directory_files:
+                print_log(f"- {file}")
+            print_log("")
 
 def read_files():
     global FILES
@@ -116,19 +120,19 @@ def repair_order():
                         file["name_new"] = file["name_old"].replace(str(number), str(files_last_correct_number + 1))
                         files_last_correct_number += 1
     if DISORDER_FOUND:
-        print_log("Disordered images found\n")
+        print_log("Fehlerhafte Bildreihenfolge gefunden\n")
     else:
-        print_log("No disordered images found\n")
+        print_log("Keine fehlerhafte Bildreihenfolge gefunden\n")
 
     pprint(FILES)
 
 def rename_files():
     global FILES
-    print_log("Renaming files:")
+    print_log("Bilder werden umbenannt:")
     for file in FILES:
         if file["name_new"]:
             os.rename(file["name_old"], file["name_new"])
-            print_log(f"Old: {file['name_old']} -> New: {file['name_new']}")
+            print_log(f"Alt: {file['name_old']} -> Neu: {file['name_new']}")
     print_log("")
 
 def backup_folder():
@@ -139,32 +143,32 @@ def backup_folder():
         backup_folder = os.path.basename(FOLDER) + "_backup"
         backup_path = user_desktop / backup_folder
         if os.path.isdir(backup_path):
-            print_log("There is already a backup - Please check\n")
+            print_log(f"Es gibt bereits ein Backup für diesen Ordner - Bitte überprüfen:\n{backup_path}\n")
             raise Exception
         os.mkdir(user_desktop / backup_folder)
         for file in FILES:
             copyfile(FOLDER + "/" + file['name_old'], backup_path / file['name_old'])
-        print_log("Backup created at " + str(backup_path) + "\n")
+        print_log(f"Backup wurde erstellt unter:\n{backup_path}\n")
     except Exception:
         BACKUP_CREATED = False
-        print_log("Could not create backup - aborting\n")
+        print_log("Backup konnte nicht erstellt werden - Abbruch\n")
 
 def delete_non_images():
     global FILES
     for file in FILES:
         if file["filetype"] != "image":
             os.remove(os.path.join(FOLDER, file["name_old"]))
-            print_log(f"Deleted: {file['name_old']}")
+            print_log(f"Gelöscht: {file['name_old']}")
     print_log("")
 
 def start_processing():
     global FOLDER, CHECKBOX_DELETE, CHECKBOX_NO_BACKUP, BACKUP_CREATED, DISORDER_FOUND, FILES
     FOLDER = folder_selection.get()
     if proceed_messagebox() == "yes":
-        print_log("", clean=True)
+        print_log("", clean=True) # clean the log when starting a new process
         if FOLDER:
             if os.path.isdir(FOLDER):
-                print_log("Searching in:\n" + FOLDER + "\n")
+                print_log(f"Prüfe Bilder in:\n{FOLDER}\n")
                 os.chdir(FOLDER)
                 read_files()
                 if FILES:
@@ -181,13 +185,13 @@ def start_processing():
                             if CHECKBOX_DELETE:
                                 delete_non_images()
                 else:
-                    print_log("No files found in directory\n")
+                    print_log("Im Verzeichnis wurden keine Dateien gefunden\n")
             else:
-                print_log("Directory does not exist\n")
+                print_log("Das ausgewählte Verzeichnis existiert nicht\n")
         else:
-            print_log("No directory selected\n")
+            print_log("Es wurde kein Verzeichnis ausgewählt\n")
     else:
-        print_log("Aborted by user\n")
+        print_log("Abbruch durch Benutzer\n")
 
 """ 
 Height of rectangles: 30.0
@@ -223,7 +227,7 @@ canvas.tag_bind(start_canvas, "<Leave>", lambda x: canvas.config(cursor=""))
 # Choose Directory
 folder_selection = Entry(bd=0, bg="white", fg="black", highlightthickness=0, font=("Inter Medium", 12 * -1))
 folder_selection.place(x=530.0, y=110.0, width=250.0, height=30.0)
-folder_selection.insert(0, "Choose Directory")
+folder_selection.insert(0, "Ordner auswählen")
 # Folder image
 image_folder = PhotoImage(file=relative_to_assets("folder.png"))
 folder_canvas = canvas.create_image(800.0, 93.0, image=image_folder, anchor="nw")

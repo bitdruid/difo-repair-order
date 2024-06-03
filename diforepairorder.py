@@ -219,10 +219,17 @@ canvas.place(x=0, y=0)
 
 # START BUTTON
 image_start = PhotoImage(file=relative_to_assets("start.png"))
+image_start_glow = PhotoImage(file=relative_to_assets("start_glow.png"))
 start_canvas = canvas.create_image(675.0, 450.0, image=image_start)
 canvas.tag_bind(start_canvas, "<Button-1>", lambda x: start_processing())
-canvas.tag_bind(start_canvas, "<Enter>", lambda x: canvas.config(cursor="hand2"))
-canvas.tag_bind(start_canvas, "<Leave>", lambda x: canvas.config(cursor=""))
+canvas.tag_bind(start_canvas, "<Enter>", lambda x: enter_start_image(start_canvas, image_start_glow))
+canvas.tag_bind(start_canvas, "<Leave>", lambda x: leave_start_image(start_canvas, image_start))
+def enter_start_image(canvas_id, image_start_glow):
+    canvas.itemconfig(canvas_id, image=image_start_glow)
+    canvas.config(cursor="hand2")
+def leave_start_image(canvas_id, image_start):
+    canvas.itemconfig(canvas_id, image=image_start)
+    canvas.config(cursor="")
 
 # Choose Directory
 folder_selection = Entry(bd=0, bg="white", fg="black", highlightthickness=0, font=("Inter Medium", 12 * -1))
@@ -230,10 +237,17 @@ folder_selection.place(x=530.0, y=110.0, width=250.0, height=30.0)
 folder_selection.insert(0, "Ordner auswählen")
 # Folder image
 image_folder = PhotoImage(file=relative_to_assets("folder.png"))
+image_folder_glow = PhotoImage(file=relative_to_assets("folder_glow.png"))
 folder_canvas = canvas.create_image(800.0, 93.0, image=image_folder, anchor="nw")
 canvas.tag_bind(folder_canvas, "<Button-1>", lambda x: choose_directory())
-canvas.tag_bind(folder_canvas, "<Enter>", lambda x: canvas.config(cursor="hand2"))
-canvas.tag_bind(folder_canvas, "<Leave>", lambda x: canvas.config(cursor=""))
+canvas.tag_bind(folder_canvas, "<Enter>", lambda x: enter_folder_image(folder_canvas, image_folder_glow))
+canvas.tag_bind(folder_canvas, "<Leave>", lambda x: leave_folder_image(folder_canvas, image_folder))
+def enter_folder_image(canvas_id, image_folder_glow):
+    canvas.itemconfig(canvas_id, image=image_folder_glow)
+    canvas.config(cursor="hand2")
+def leave_folder_image(canvas_id, image_folder):
+    canvas.itemconfig(canvas_id, image=image_folder)
+    canvas.config(cursor="")
 
 # Checkbox Alles außer Bilder löschen
 canvas.create_rectangle(530.0, 200.0, 780.0, 230.0, fill="white", outline="")
@@ -268,10 +282,17 @@ log_output.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 log_output.config(state="disabled")
 # Log image
 image_log = PhotoImage(file=relative_to_assets("log.png"))
+image_log_glow = PhotoImage(file=relative_to_assets("log_glow.png"))
 log_canvas = canvas.create_image(414.0, 69.0, image=image_log)
 canvas.tag_bind(log_canvas, "<Button-1>", lambda x: save_log())
-canvas.tag_bind(log_canvas, "<Enter>", lambda x: canvas.config(cursor="hand2"))
-canvas.tag_bind(log_canvas, "<Leave>", lambda x: canvas.config(cursor=""))
+canvas.tag_bind(log_canvas, "<Enter>", lambda x: enter_log_image(log_canvas, image_log_glow))
+canvas.tag_bind(log_canvas, "<Leave>", lambda x: leave_log_image(log_canvas, image_log))
+def enter_log_image(canvas_id, image_log_glow):
+    canvas.itemconfig(canvas_id, image=image_log_glow)
+    canvas.config(cursor="hand2")
+def leave_log_image(canvas_id, image_log):
+    canvas.itemconfig(canvas_id, image=image_log)
+    canvas.config(cursor="")
 
 # Version
 canvas.create_text(10.0, 605.0, anchor="nw", text=f"Version {VERSION}", fill="#000000", font=("Inter Medium", 12 * -1))

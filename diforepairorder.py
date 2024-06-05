@@ -74,18 +74,18 @@ def choose_directory():
     directory = filedialog.askdirectory()
     if directory:
         # set folder_selection to None if system drive
-        if "c:" in directory.lower():
-            print_log("Das ausgewählte Verzeichnis befindet sich auf dem Systemlaufwerk. Bitte den Ordner auf der SD-Karte der Kamera auswählen.\n")
-        else:
-            print_log("", clean=True)
-            print_log("Ausgewähltes Verzeichnis:\n" + directory + "\n")
-            folder_selection.delete(0, tk.END)
-            folder_selection.insert(0, directory)
-            directory_files = os.listdir(directory)
-            print_log("Dateien im ausgewählten Verzeichnis:\n")
-            for file in directory_files:
-                print_log(f"- {file}")
-            print_log("")
+        #if "c:" in directory.lower():
+        #    print_log("Das ausgewählte Verzeichnis befindet sich auf dem Systemlaufwerk. Bitte den Ordner auf der SD-Karte der Kamera auswählen.\n")
+        #else:
+        print_log("", clean=True)
+        print_log("Ausgewähltes Verzeichnis:\n" + directory + "\n")
+        folder_selection.delete(0, tk.END)
+        folder_selection.insert(0, directory)
+        directory_files = os.listdir(directory)
+        print_log("Dateien im ausgewählten Verzeichnis:\n")
+        for file in directory_files:
+            print_log(f"- {file}")
+        print_log("")
 
 def read_files():
     global FILES
@@ -137,7 +137,6 @@ def rename_files():
 
 def backup_folder():
     global BACKUP_CREATED
-    BACKUP_CREATED = True
     try:
         user_desktop = Path.home() / "Desktop"
         backup_folder = os.path.basename(FOLDER) + "_backup"
@@ -146,9 +145,13 @@ def backup_folder():
             print_log(f"Es gibt bereits ein Backup für diesen Ordner - Bitte überprüfen:\n{backup_path}\n")
             raise Exception
         os.mkdir(user_desktop / backup_folder)
+        count_files = 0
         for file in FILES:
             copyfile(FOLDER + "/" + file['name_old'], backup_path / file['name_old'])
-        print_log(f"Backup wurde erstellt unter:\n{backup_path}\n")
+            count_files += 1
+        if os.path.isdir(backup_path) and count_files == len(FILES):
+            BACKUP_CREATED = True
+            print_log(f"Backup wurde erstellt unter:\n{backup_path}\n")
     except Exception:
         BACKUP_CREATED = False
         print_log("Backup konnte nicht erstellt werden - Abbruch\n")

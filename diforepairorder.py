@@ -3,6 +3,12 @@ import os
 import magic
 import re
 import datetime
+
+import piexif
+from PIL import Image
+
+from win32_setctime import setctime
+
 from pathlib import Path
 from shutil import copyfile
 import tkinter as tk
@@ -38,6 +44,10 @@ def toggle_checkbox(checkbox_var: str, checkbox_image_id: int, checked_image: Ph
         new_image = checked_image if CHECKBOX_NO_BACKUP else unchecked_image
 
     canvas.itemconfig(checkbox_image_id, image=new_image)
+
+
+
+
 
 def print_log(message, clean=False):
     if clean:
@@ -87,7 +97,12 @@ def choose_directory():
             print_log(f"- {file}")
         print_log("")
 
+
+
+
+
 def read_files():
+        
     global FILES
     FILES = []
     for file in os.listdir(FOLDER):
@@ -96,13 +111,15 @@ def read_files():
         file_info = {
             "name_old": file,
             "name_new": "",
-            "filetype": magic.Magic(mime=True).from_file(file_path).split("/")[0]
+            "filetype": magic.Magic(mime=True).from_file(file_path).split("/")[0],
+            "file_created": datetime.datetime.fromtimestamp(os.path.getctime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
         }
         FILES.append(file_info)
     pprint(FILES)
 
 def repair_order():
     global FILES, DISORDER_FOUND
+    FILES = sorted(FILES, key=lambda x: x["name_old"])
     files_last_correct_number = False
     DISORDER_FOUND = False
     for file in FILES:
@@ -117,8 +134,6 @@ def repair_order():
                         files_last_correct_number = number
                     else:
                         DISORDER_FOUND = True
-                        file["name_new"] = file["name_old"].replace(str(number), str(files_last_correct_number + 1))
-                        files_last_correct_number += 1
     if DISORDER_FOUND:
         print_log("Fehlerhafte Bildreihenfolge gefunden\n")
     else:
@@ -126,14 +141,85 @@ def repair_order():
 
     pprint(FILES)
 
+
+
+
+
 def rename_files():
     global FILES
+    FILES = sorted(FILES, key=lambda x: x["file_created"])
     print_log("Bilder werden umbenannt:")
+    name_new = "IMG_%s.%s"
+    counter = 1
     for file in FILES:
-        if file["name_new"]:
+        if file["filetype"] == "image":
+            file["name_new"] = name_new % (str(counter).zfill(4), file["name_old"].split(".")[1])
             os.rename(file["name_old"], file["name_new"])
             print_log(f"Alt: {file['name_old']} -> Neu: {file['name_new']}")
+            counter += 1
     print_log("")
+
+def timestamp_files():
+    """
+    Takes the timestamp of the first image and applies the same timestamp on each image with 1 second interval.
+    """
+    global FILES
+    print_log("Zeitstempel der Bilder wird angereiht:")
+    first_image = True
+    shot_date = None
+    shot_time = None
+    for file in FILES:
+        if file["filetype"] == "image":
+            if first_image:
+                shot_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y:%m:%d")
+                shot_time = "00:00:00"
+                first_image = False
+            else:
+                shot_time = (datetime.datetime.strptime(shot_time, "%H:%M:%S") + datetime.timedelta(seconds=1)).strftime("%H:%M:%S")
+            
+            current_image = file["name_new"] if file["name_new"] else file["name_old"]
+
+            im = Image.open(current_image)
+            try:
+                exif_dict = piexif.load(im.info["exif"])
+            except KeyError:
+                exif_dict = {
+                    "0th": {}, 
+                    "Exif": {}, 
+                    "GPS": {}, 
+                    "Interop": {}, 
+                    "1st": {}, 
+                    "thumbnail": None
+                    }
+            datetime_str = f"{shot_date} {shot_time}"
+            exif_dict["0th"][piexif.ImageIFD.Make] = b"NASA"
+            exif_dict["0th"][piexif.ImageIFD.Model] = b"Hubble Space Telescope Perkin-Elmer Corporation"
+            exif_dict["0th"][piexif.ImageIFD.DateTime] = datetime_str
+
+            exif_dict["1st"][piexif.ImageIFD.Make] = b"NASA"
+            exif_dict["1st"][piexif.ImageIFD.Model] = b"Hubble Space Telescope Perkin-Elmer Corporation"
+            exif_dict["1st"][piexif.ImageIFD.DateTime] = datetime_str
+
+            exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = datetime_str
+            exif_dict["Exif"][piexif.ExifIFD.DateTimeDigitized] = datetime_str
+            exif_dict["Exif"][piexif.ExifIFD.LensMake] = b"Perkin-Elmer Corporation"
+            exif_dict["Exif"][piexif.ExifIFD.LensModel] = b"Hubble Space Telescope"
+
+            # set exif data
+            exif_bytes = piexif.dump(exif_dict)
+            im.save(current_image, "jpeg", exif=exif_bytes)
+
+            # set file data
+            win_timestamp = datetime.datetime.strptime(datetime_str, "%Y:%m:%d %H:%M:%S").timestamp() # convert to windows timestamp
+            os.utime(current_image, (win_timestamp, win_timestamp)) # change access and modified time
+            setctime(current_image, win_timestamp) # change creation time (windows)
+
+            print_log(f"{current_image} -> {datetime_str}")
+    print_log("")
+
+
+
+
 
 def backup_folder():
     global BACKUP_CREATED
@@ -181,10 +267,12 @@ def start_processing():
                             backup_folder()
                             if BACKUP_CREATED:
                                 rename_files()
+                                timestamp_files()
                                 if CHECKBOX_DELETE:
                                     delete_non_images()
                         else:
                             rename_files()
+                            timestamp_files()
                             if CHECKBOX_DELETE:
                                 delete_non_images()
                 else:
@@ -195,6 +283,10 @@ def start_processing():
             print_log("Es wurde kein Verzeichnis ausgewählt\n")
     else:
         print_log("Abbruch durch Benutzer\n")
+
+
+
+
 
 """ 
 Height of rectangles: 30.0
